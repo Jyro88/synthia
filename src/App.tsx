@@ -1,121 +1,147 @@
-import React, { useState } from 'react';
-import { Element } from './types';
-import { BASIC_ELEMENTS, DISCOVERABLE_ELEMENTS, getElementById } from './data/elements';
-import { attemptCombination } from './gameLogic/combinations';
-import { useGameState } from './hooks/useGameState';
-import { useElementSelection } from './hooks/useElementSelection';
-import GameHeader from './components/GameHeader';
-import ElementPalette from './components/ElementPalette';
-import CombinationArea from './components/CombinationArea';
-import Inventory from './components/Inventory';
+import React, { useState, useEffect, useCallback } from 'react';
+import type { Element } from './types';
+import { allElements } from './data/elements';
+import { useDragAndDrop } from './hooks/useDragAndDrop';
+import { useCombinations } from './hooks/useCombinations';
+import { Canvas } from './components/Canvas';
+import { Sidebar } from './components/Sidebar';
 
 function App() {
-  const { gameState, isLoading, addDiscoveredElement, resetGame } = useGameState();
-  const { selectionState, selectElement, deselectElement, clearSelection } = useElementSelection(3);
-  const [isCombining, setIsCombining] = useState(false);
-  const [lastResult, setLastResult] = useState<Element | null>(null);
+  const [elements, setElements] = useState<Element[]>([
+    { instanceId: 'fire-1', elementId: 'fire', name: 'Fire', emoji: '🔥', x: 200, y: 150, rarity: 'common' },
+    { instanceId: 'water-1', elementId: 'water', name: 'Water', emoji: '💧', x: 350, y: 200, rarity: 'common' },
+    { instanceId: 'earth-1', elementId: 'earth', name: 'Earth', emoji: '🌍', x: 500, y: 180, rarity: 'common' }
+  ]);
 
-  // Get all available elements (basic + discovered)
-  const availableElements = [
-    ...BASIC_ELEMENTS,
-    ...DISCOVERABLE_ELEMENTS.filter(element => 
-      gameState.discoveredElements.includes(element.id)
-    )
-  ];
+  const {
+    handleCanvasMouseDown,
+    handleSidebarMouseDown,
+    updateElementPosition,
+    stopDragging,
+    getInstanceCounter,
+    getDraggedElement,
+    isDragging
+  } = useDragAndDrop();
 
-  const handleElementClick = (element: Element) => {
-    if (selectionState.selectedElements.some(el => el.id === element.id)) {
-      deselectElement(element.id);
-    } else {
-      selectElement(element);
+  const {
+    checkForCombinations,
+    getDiscoveredElementsList
+  } = useCombinations();
+
+  const handleCanvasElementMouseDown = useCallback((e: React.MouseEvent, instanceId: string) => {
+    const element = elements.find(el => el.instanceId === instanceId);
+    if (element) {
+      handleCanvasMouseDown(e, instanceId, element);
     }
-  };
+  }, [elements, handleCanvasMouseDown]);
 
-  const handleCombine = async () => {
-    if (selectionState.selectedElements.length < 2) return;
+  const handleSidebarElementMouseDown = useCallback((e: React.MouseEvent, elementId: string) => {
+    const elementDefinition = allElements.find(el => el.id === elementId);
+    if (!elementDefinition) return;
 
-    setIsCombining(true);
+    const newInstanceId = handleSidebarMouseDown(e, elementId, elementDefinition);
     
-    // Simulate combination delay for better UX
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    const result = attemptCombination(selectionState.selectedElements);
-    
-    if (result.isValid && result.result) {
-      addDiscoveredElement(result.result);
-      setLastResult(result.result);
-    }
-    
-    clearSelection();
-    setIsCombining(false);
-  };
+    // Create new instance from sidebar
+    const newElement: Element = {
+      instanceId: newInstanceId,
+      elementId: elementId,
+      name: elementDefinition.name,
+      emoji: elementDefinition.emoji,
+      rarity: elementDefinition.rarity,
+      x: e.clientX,
+      y: e.clientY
+    };
 
-  const canCombine = selectionState.selectedElements.length >= 2 && 
-                    selectionState.selectedElements.length <= 3;
+    setElements(prev => [...prev, newElement]);
+  }, [handleSidebarMouseDown]);
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="text-4xl mb-4">⚗️</div>
-          <div className="text-xl text-gray-600">Loading Synthia...</div>
-        </div>
-      </div>
-    );
-  }
+  // Global mouse event listeners for smooth dragging
+  useEffect(() => {
+    if (!isDragging()) return;
+
+    const handleGlobalMouseMove = (e: MouseEvent) => {
+      updateElementPosition(elements, setElements, e);
+    };
+
+    const handleGlobalMouseUp = () => {
+      const draggedElementId = getDraggedElement();
+      if (!draggedElementId) {
+        stopDragging();
+        return;
+      }
+
+      const draggedEl = elements.find(el => el.instanceId === draggedElementId);
+      if (draggedEl) {
+        const result = checkForCombinations(draggedEl, elements);
+        
+        if (result) {
+          // Find the element that was combined with
+          const nearbyElements = elements.filter(el => {
+            if (el.instanceId === draggedEl.instanceId) return false;
+            const distance = Math.sqrt(
+              Math.pow(el.x - draggedEl.x, 2) + Math.pow(el.y - draggedEl.y, 2)
+            );
+            return distance < 80;
+          });
+
+          if (nearbyElements.length > 0) {
+            const closest = nearbyElements[0];
+            
+            // Remove the two combined elements and add the result
+            setElements(prev => [
+              ...prev.filter(el => 
+                el.instanceId !== draggedEl.instanceId && 
+                el.instanceId !== closest.instanceId
+              ),
+              {
+                instanceId: `${result.elementId}-${getInstanceCounter()}`,
+                elementId: result.elementId,
+                name: result.name,
+                emoji: result.emoji,
+                rarity: result.rarity,
+                x: result.x,
+                y: result.y,
+                isNew: result.isNew
+              }
+            ]);
+
+            // Remove the "new" flag after animation
+            if (result.isNew) {
+              setTimeout(() => {
+                setElements(prev => prev.map(el => ({ ...el, isNew: false })));
+              }, 1000);
+            }
+          }
+        }
+      }
+      stopDragging();
+    };
+
+    document.addEventListener('mousemove', handleGlobalMouseMove);
+    document.addEventListener('mouseup', handleGlobalMouseUp);
+
+    return () => {
+      document.removeEventListener('mousemove', handleGlobalMouseMove);
+      document.removeEventListener('mouseup', handleGlobalMouseUp);
+    };
+  }, [isDragging(), elements, getDraggedElement, getInstanceCounter, checkForCombinations, updateElementPosition, stopDragging, setElements]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-4">
-      <div className="max-w-6xl mx-auto">
-        <GameHeader gameState={gameState} onReset={resetGame} />
-        
-        {/* Success notification */}
-        {lastResult && (
-          <div className="mb-6 p-4 bg-green-100 border border-green-400 text-green-700 rounded-lg">
-            <div className="flex items-center gap-3">
-              <span className="text-2xl">{lastResult.emoji}</span>
-              <div>
-                <div className="font-bold">New Element Discovered!</div>
-                <div className="text-sm">{lastResult.name} - {lastResult.description}</div>
-              </div>
-              <button
-                onClick={() => setLastResult(null)}
-                className="ml-auto text-green-500 hover:text-green-700"
-              >
-                ×
-              </button>
-            </div>
-          </div>
-        )}
-        
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Left column - Element Palette */}
-          <div className="lg:col-span-2 space-y-6">
-            <ElementPalette
-              elements={availableElements}
-              selectedElements={selectionState.selectedElements}
-              onElementClick={handleElementClick}
-              maxSelection={selectionState.maxSelection}
-            />
-            
-            <CombinationArea
-              selectedElements={selectionState.selectedElements}
-              onElementRemove={deselectElement}
-              onCombine={handleCombine}
-              canCombine={canCombine}
-              isCombining={isCombining}
-            />
-          </div>
-          
-          {/* Right column - Inventory */}
-          <div className="lg:col-span-1">
-            <Inventory
-              elements={gameState.inventory}
-              showStats={true}
-            />
-          </div>
-        </div>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 flex">
+      <div className="flex-1 relative">
+        <Canvas
+          elements={elements}
+          draggedElement={getDraggedElement()}
+          onElementMouseDown={handleCanvasElementMouseDown}
+        />
       </div>
+
+      <Sidebar
+        discoveredElements={allElements.filter(el => getDiscoveredElementsList().includes(el.id))}
+        totalElements={allElements.length}
+        elementsOnCanvas={elements.length}
+        onElementMouseDown={handleSidebarElementMouseDown}
+      />
     </div>
   );
 }
