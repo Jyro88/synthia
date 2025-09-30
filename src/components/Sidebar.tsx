@@ -16,20 +16,24 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onElementMouseDown
 }) => {
   return (
-    <div className="w-72 bg-white border-l border-gray-200 p-6 overflow-y-auto shadow-xl">
-      <div className="mb-6">
-        <h2 className="text-2xl font-bold text-gray-800 mb-1">🧪 Synthia</h2>
-        <p className="text-sm text-gray-500">Element Crafting</p>
+    <div className="w-80 bg-black/20 backdrop-blur-xl border-l border-white/10 p-6 overflow-y-auto shadow-2xl">
+      <div className="mb-8">
+        <h2 className="text-3xl font-bold text-white mb-2 bg-gradient-to-r from-purple-400 to-cyan-400 bg-clip-text text-transparent">
+          ⚗️ Synthia
+        </h2>
+        <p className="text-sm text-white/70 font-medium">Element Synthesis Lab</p>
       </div>
 
-      <div className="mb-6">
-        <div className="flex items-center justify-between mb-3">
-          <h3 className="text-sm font-bold text-gray-700">Discovered Elements</h3>
-          <span className="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded-full font-semibold">
-            {discoveredElements.length}/{totalElements}
-          </span>
+      <div className="mb-8">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-sm font-bold text-white uppercase tracking-wider">Elements</h3>
+          <div className="bg-gradient-to-r from-purple-500/20 to-cyan-500/20 backdrop-blur-sm border border-white/20 rounded-full px-3 py-1">
+            <span className="text-xs font-bold text-white">
+              {discoveredElements.length}/{totalElements}
+            </span>
+          </div>
         </div>
-        <div className="space-y-2">
+        <div className="space-y-3">
           {discoveredElements.map(element => (
             <SidebarElement
               key={element.id}
@@ -40,14 +44,18 @@ export const Sidebar: React.FC<SidebarProps> = ({
         </div>
       </div>
 
-      <div className="text-xs text-gray-500 bg-gray-50 rounded-lg p-3 space-y-1">
-        <div className="flex justify-between">
-          <span>Discoveries:</span>
-          <span className="font-semibold">{discoveredElements.length}</span>
+      <div className="bg-gradient-to-br from-white/5 to-white/10 backdrop-blur-sm border border-white/20 rounded-2xl p-4 space-y-3">
+        <div className="flex justify-between items-center">
+          <span className="text-sm text-white/80 font-medium">Discoveries</span>
+          <span className="font-bold text-white bg-gradient-to-r from-purple-400 to-cyan-400 bg-clip-text text-transparent">
+            {discoveredElements.length}
+          </span>
         </div>
-        <div className="flex justify-between">
-          <span>On canvas:</span>
-          <span className="font-semibold">{elementsOnCanvas}</span>
+        <div className="flex justify-between items-center">
+          <span className="text-sm text-white/80 font-medium">Active</span>
+          <span className="font-bold text-white bg-gradient-to-r from-purple-400 to-cyan-400 bg-clip-text text-transparent">
+            {elementsOnCanvas}
+          </span>
         </div>
       </div>
     </div>
