@@ -1,38 +1,46 @@
 import React from 'react';
 import type { ElementDefinition } from '../types';
+import { getRarityInfo } from '../services/rarity';
 
 interface SidebarElementProps {
   element: ElementDefinition;
   onMouseDown: (e: React.MouseEvent, elementId: string) => void;
+  onInfoClick?: (element: ElementDefinition) => void;
 }
 
 export const SidebarElement: React.FC<SidebarElementProps> = ({
   element,
-  onMouseDown
+  onMouseDown,
+  onInfoClick
 }) => {
-  const getRarityColor = (rarity: string) => {
-    switch (rarity) {
-      case 'common': return 'from-gray-500/30 to-gray-600/30 border-gray-400/50';
-      case 'uncommon': return 'from-green-500/30 to-emerald-600/30 border-green-400/50';
-      case 'rare': return 'from-blue-500/30 to-cyan-600/30 border-blue-400/50';
-      case 'epic': return 'from-purple-500/30 to-violet-600/30 border-purple-400/50';
-      case 'legendary': return 'from-yellow-500/30 to-orange-600/30 border-yellow-400/50';
-      default: return 'from-gray-500/30 to-gray-600/30 border-gray-400/50';
-    }
-  };
+  const rarityInfo = getRarityInfo(element.rarity);
 
   return (
     <div
       onMouseDown={(e) => onMouseDown(e, element.id)}
-      className={`w-full bg-gradient-to-br ${getRarityColor(element.rarity)} backdrop-blur-sm rounded-xl border px-4 py-3 shadow-lg hover:shadow-xl hover:scale-105 transition-all cursor-pointer active:cursor-grabbing flex items-center gap-3 group hover:border-white/40`}
+      className={`relative w-full bg-gradient-to-br ${rarityInfo.bgColor} rounded-xl border-2 px-4 py-3 shadow-sm hover:shadow-md hover:border-amber-300 transition-shadow cursor-pointer active:cursor-grabbing flex items-center gap-3 group`}
     >
-      <div className="text-2xl group-hover:scale-110 transition-transform pointer-events-none drop-shadow-lg">
+      <div className="text-2xl pointer-events-none">
         {element.emoji}
       </div>
-      <div className="flex-1 text-left pointer-events-none">
-        <div className="font-bold text-white text-sm drop-shadow-md">{element.name}</div>
-        <div className="text-xs text-white/70 capitalize font-medium">{element.rarity}</div>
+      <div className="flex-1 min-w-0 text-left pointer-events-none">
+        <div className="font-display font-semibold text-ink-700 text-sm truncate">{element.name}</div>
+        <div className={`text-xs capitalize font-medium ${rarityInfo.color}`}>{element.rarity}</div>
       </div>
+
+      {onInfoClick && (
+        <button
+          onMouseDown={(e) => e.stopPropagation()}
+          onClick={(e) => {
+            e.stopPropagation();
+            onInfoClick(element);
+          }}
+          className="w-5 h-5 rounded-full bg-cream-50 border-2 border-ink-400/40 text-ink-500 text-[10px] font-bold flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-sm hover:bg-amber-100 hover:border-amber-400 hover:text-amber-700"
+          title={`About ${element.name}`}
+        >
+          i
+        </button>
+      )}
     </div>
   );
 };

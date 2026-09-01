@@ -26,7 +26,25 @@ export default {
           air: '#f3f4f6',
           steam: '#94a3b8',
           mud: '#92400e',
-        }
+        },
+        cream: {
+          50: '#fffdf9',
+          100: '#fdf8ee',
+          200: '#faf1dc',
+          300: '#f3e6c8',
+        },
+        ink: {
+          400: '#a89e8f',
+          500: '#7a6f5f',
+          600: '#5c5344',
+          700: '#463f34',
+          800: '#332d25',
+        },
+      },
+      fontFamily: {
+        display: ['"Shantell Sans"', 'cursive'],
+        body: ['Quicksand', 'sans-serif'],
+        hand: ['"Shantell Sans"', 'cursive'],
       },
     },
   },

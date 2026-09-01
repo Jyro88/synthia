@@ -4,10 +4,159 @@
 
 @layer base {
   html {
-    font-family: 'Inter', system-ui, sans-serif;
+    font-family: 'Quicksand', system-ui, sans-serif;
   }
-  
+
   body {
-    @apply bg-gradient-to-br from-slate-50 to-slate-100 min-h-screen;
+    @apply bg-cream-100 min-h-screen font-body;
+  }
+}
+
+@layer utilities {
+  /* A calm, slow scale+opacity oscillation -- used anywhere we previously
+     reached for Tailwind's default animate-pulse/animate-bounce, which read
+     as snappy/springy rather than smooth. */
+  @keyframes breathe {
+    0%, 100% {
+      opacity: 0.75;
+      transform: scale(1);
+    }
+    50% {
+      opacity: 1;
+      transform: scale(1.08);
+    }
+  }
+
+  @keyframes shake {
+    0%, 100% {
+      transform: translateX(0);
+    }
+    10%, 30%, 50%, 70%, 90% {
+      transform: translateX(-2px);
+    }
+    20%, 40%, 60%, 80% {
+      transform: translateX(2px);
+    }
+  }
+
+  .animate-breathe {
+    animation: breathe 2.2s ease-in-out infinite;
+  }
+
+  .animate-shake {
+    animation: shake 0.5s ease-in-out;
+  }
+
+  /* Rejected combination: a squash-and-stretch "bonk" on impact, then a big
+     decaying head-shake wobble before it springs back -- reads as a real
+     physical refusal, not a generic UI jiggle. Paired with RejectPuff's dust
+     particles and thud ring below. */
+  @keyframes rejectShake {
+    0% { transform: translate(0, 0) rotate(0) scale(1, 1); }
+    7% { transform: translate(-2px, 3px) rotate(-1deg) scale(0.88, 1.14); }
+    18% { transform: translate(-18px, -3px) rotate(-9deg) scale(1.06, 0.95); }
+    30% { transform: translate(15px, 0) rotate(8deg) scale(1.06, 0.95); }
+    42% { transform: translate(-12px, 0) rotate(-6deg); }
+    54% { transform: translate(9px, 0) rotate(4.5deg); }
+    66% { transform: translate(-6px, 0) rotate(-3deg); }
+    78% { transform: translate(3px, 0) rotate(1.5deg); }
+    90% { transform: translate(-1px, 0) rotate(-0.5deg); }
+    100% { transform: translate(0, 0) rotate(0) scale(1, 1); }
+  }
+
+  .animate-rejectShake {
+    animation: rejectShake 0.65s cubic-bezier(0.36, 0.07, 0.19, 0.97);
+  }
+
+  /* RejectPuff: a small poof of dust kicked up at the rejected element --
+     particles drift outward and settle downward (gravity-biased --dy) rather
+     than radiating like the merge celebration, so it reads as "poof, nothing
+     happened" instead of a second success animation. Paired with a small dull
+     "thud" ring for the moment of impact. */
+  @keyframes poofParticle {
+    0% { transform: translate(0, 0) scale(0.7); opacity: 0.9; }
+    100% { transform: translate(var(--dx), var(--dy)) scale(0.1); opacity: 0; }
+  }
+
+  .animate-poofParticle {
+    animation: poofParticle 0.55s ease-out forwards;
+  }
+
+  @keyframes thudRing {
+    0% { transform: scale(0.3); opacity: 0.55; }
+    100% { transform: scale(1.8); opacity: 0; }
+  }
+
+  .animate-thudRing {
+    animation: thudRing 0.3s ease-out forwards;
+  }
+
+  /* The dashed connector line drawn between a dragged element and its merge
+     target: the dashes creep toward the target, like thread being drawn
+     between them, instead of a static line -- one repeat unit (8px dash +
+     14px gap = 22px) per cycle so it loops seamlessly. */
+  @keyframes threadFlow {
+    from { background-position: 0 0; }
+    to { background-position: -22px 0; }
+  }
+
+  .animate-threadFlow {
+    animation: threadFlow 0.6s linear infinite;
+  }
+
+  /* Rarity ornamentation (CanvasElement): rare+ cards get an occasional
+     diagonal light sweep, like light catching a polished surface -- long
+     idle pause between passes (0-88%) so it reads as an occasional glint,
+     not a constant shimmer. */
+  @keyframes shimmerSweep {
+    0%, 88% { transform: translateX(-160%) rotate(20deg); }
+    100% { transform: translateX(160%) rotate(20deg); }
+  }
+
+  .animate-shimmerSweep {
+    animation: shimmerSweep 3.4s ease-in-out infinite;
+  }
+
+  /* Legendary-only: a slow, soft breathing glow around the card border. */
+  @keyframes legendaryGlow {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(217, 119, 6, 0); }
+    50% { box-shadow: 0 0 12px 2px rgba(217, 119, 6, 0.4); }
+  }
+
+  .animate-legendaryGlow {
+    animation: legendaryGlow 2.6s ease-in-out infinite;
+  }
+
+  /* Merge celebration: a bouncy entrance for the result card... */
+  @keyframes popIn {
+    0% { transform: scale(0.4); opacity: 0; }
+    55% { transform: scale(1.18); opacity: 1; }
+    75% { transform: scale(0.94); }
+    100% { transform: scale(1); }
+  }
+
+  .animate-popIn {
+    animation: popIn 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  }
+
+  /* ...plus a burst of particles flying outward (--dx/--dy set per-particle
+     inline) and an expanding ring (--ring-scale set per-tier), both driving
+     the MergeBurst component. */
+  @keyframes burstParticle {
+    0% { transform: translate(0, 0) scale(1); opacity: 1; }
+    100% { transform: translate(var(--dx), var(--dy)) scale(0.2); opacity: 0; }
+  }
+
+  @keyframes burstRing {
+    0% { transform: scale(0.3); opacity: 0.7; }
+    100% { transform: scale(var(--ring-scale, 2.2)); opacity: 0; }
+  }
+
+  .animate-burstParticle {
+    animation: burstParticle 0.7s ease-out forwards;
+  }
+
+  .animate-burstRing {
+    animation: burstRing 0.6s ease-out forwards;
   }
 }

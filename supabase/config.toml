@@ -1,0 +1,7 @@
+# Minimal Supabase CLI config -- just enough to deploy the judge-combination
+# Edge Function. Run `npx supabase link --project-ref <your-project-ref>`
+# once to connect this to your actual Supabase project before deploying.
+project_id = "synthia"
+
+[functions.judge-combination]
+verify_jwt = true

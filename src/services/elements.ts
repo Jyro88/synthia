@@ -55,7 +55,8 @@ export const addElement = async (
         id,
         name,
         emoji,
-        rarity
+        rarity,
+        discovery_count: 0 // Start with 0 discoveries
       })
       .select()
       .single()
