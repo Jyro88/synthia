@@ -20,3 +20,12 @@ export interface Combination {
   elements: string[];
   result: string;
 }
+
+export interface Skin {
+  id: string;
+  name: string;
+  description: string | null;
+  isPremium: boolean;
+  isOwned: boolean;
+  isEquipped: boolean;
+}

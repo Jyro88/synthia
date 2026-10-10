@@ -11,6 +11,7 @@ import { RarityStats } from './components/RarityStats';
 import { LoginModal } from './components/LoginModal';
 import { WelcomeScreen } from './components/WelcomeScreen';
 import { ElementDetailModal } from './components/ElementDetailModal';
+import { SkinSelector } from './components/SkinSelector';
 import type { MergeBurstData } from './components/MergeBurst';
 import type { RejectPuffData } from './components/RejectPuff';
 import { getCurrentUser, onAuthStateChange } from './services/auth';
@@ -55,6 +56,7 @@ function App() {
   const [isCheckingMulti, setIsCheckingMulti] = useState(false);
   const [multiComboMessage, setMultiComboMessage] = useState<string | null>(null);
   const [showRarityStats, setShowRarityStats] = useState(false);
+  const [showSkins, setShowSkins] = useState(false);
   const [showLogin, setShowLogin] = useState(false);
   const [showWelcome, setShowWelcome] = useState(false);
   const [currentUser, setCurrentUser] = useState<any>(null);
@@ -642,6 +644,15 @@ function App() {
                 Stats
               </button>
 
+              {/* Skins Button */}
+              <button
+                onClick={() => setShowSkins(true)}
+                className="px-3 py-2 rounded-full font-medium text-sm transition-all duration-200 text-ink-500 hover:text-ink-700 hover:bg-cream-200"
+                title="Choose a card skin"
+              >
+                Skins
+              </button>
+
               {/* Login Button */}
               {!currentUser ? (
                 <button
@@ -760,6 +771,12 @@ function App() {
         element={viewingElement}
         isVisible={!!viewingElement}
         onClose={() => setViewingElement(null)}
+      />
+
+      {/* Skin Selector */}
+      <SkinSelector
+        isVisible={showSkins}
+        onClose={() => setShowSkins(false)}
       />
 
     </div>

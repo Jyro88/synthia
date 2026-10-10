@@ -33,3 +33,12 @@ export interface UserDiscoveryRecord {
   element_id: string
   discovered_at: string
 }
+
+// Database types for skins
+export interface SkinRecord {
+  id: string
+  name: string
+  description: string | null
+  is_premium: boolean
+  created_at: string
+}
