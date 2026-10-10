@@ -1,4 +1,5 @@
 import React from 'react';
+import { motion } from 'framer-motion';
 import type { Element } from '../types';
 import { getRarityInfo } from '../services/rarity';
 import { handRotation } from '../utils/handRotation';
@@ -21,20 +22,19 @@ const SHADOW_REST = '3px 3px 0 rgba(70, 63, 52, 0.18)';
 const SHADOW_ACTIVE = '5px 5px 0 rgba(217, 119, 6, 0.28)'; // dragged / newly discovered
 const SHADOW_MERGE = '5px 5px 0 rgba(245, 158, 11, 0.38)'; // valid merge target -- same honey-amber family as SHADOW_ACTIVE, one shade brighter, matching the connector line drawn between dragged element and target
 
-// Rarity ornamentation ramps up with tier, common through legendary: plain
-// card -> plain card -> occasional shimmer sweep -> shimmer + corner accents
-// -> shimmer + corner accents + a soft breathing glow ring. Kept restrained
-// on purpose (this is a 150px card, not a trading-card splash page).
+// Rarity ornamentation ramps up with tier, common through legendary:
+// plain -> a faint float -> float + shimmer sweep -> float + shimmer +
+// twinkling corner sparkles -> all of that plus a pair of orbiting sparkles
+// and a soft breathing glow. Kept restrained on purpose (this is a 150px
+// card, not a trading-card splash page) -- the physics-driven bits (float,
+// twinkle, orbit, glow) are framer-motion; the shimmer sweep stays exactly
+// the CSS keyframe it already was, untouched.
 const RARITY_ORDER: Element['rarity'][] = ['common', 'uncommon', 'rare', 'epic', 'legendary'];
-const ACCENT_DOT_COLOR: Partial<Record<Element['rarity'], string>> = {
-  epic: 'bg-violet-400',
-  legendary: 'bg-amber-400'
+const ACCENT_COLOR: Partial<Record<Element['rarity'], string>> = {
+  epic: '#a78bfa', // violet-400
+  legendary: '#fbbf24' // amber-400
 };
 
-// Memoized so dragging one element doesn't re-render every other card on the
-// canvas on every mousemove -- with stable callback props (see App.tsx) this
-// cuts each drag frame down from "re-render the whole canvas" to just the
-// element(s) whose own props actually changed.
 export const CanvasElement: React.FC<CanvasElementProps> = React.memo(({
   element,
   isDragged,
@@ -59,9 +59,12 @@ export const CanvasElement: React.FC<CanvasElementProps> = React.memo(({
     : SHADOW_REST;
 
   const detailLevel = RARITY_ORDER.indexOf(element.rarity);
+  const hasFloat = detailLevel >= 1 && !isDragged; // uncommon+, paused while held
   const hasShimmer = detailLevel >= 2; // rare+
   const hasCornerAccents = detailLevel >= 3; // epic+
+  const hasOrbiters = detailLevel >= 4; // legendary
   const hasGlow = detailLevel >= 4; // legendary
+  const accentColor = ACCENT_COLOR[element.rarity];
 
   return (
     <div
@@ -94,53 +97,99 @@ export const CanvasElement: React.FC<CanvasElementProps> = React.memo(({
         onDoubleClick?.(element.instanceId);
       }}
     >
-      <div className="relative" style={{ transform: `rotate(${baseTilt}deg)`, transition: 'transform 0.2s ease' }}>
-        {/* Legendary glow ring -- lives behind the card on its own layer so
-            its animated box-shadow never fights with the card's own sticker
-            shadow (both would otherwise be fighting over the same property
-            on the same element). */}
-        {hasGlow && (
-          <div className="absolute -inset-1 rounded-2xl pointer-events-none animate-legendaryGlow"></div>
-        )}
-
-        <div
-          className={`relative overflow-hidden bg-gradient-to-br ${rarityInfo.bgColor} rounded-2xl border-[3px] px-4 py-3 flex items-center gap-3 transition-all duration-200 ${
-            (isDragged && hasMergeTargets) || isMergeTarget
-              ? 'scale-110 border-amber-400'
-              : ''
-          } ${isMergeTarget ? 'hover:scale-115' : ''}`}
-          style={{ boxShadow: cardShadow }}
-        >
-          {/* Rare+ : an occasional diagonal glint sweeping across the card,
-              like light catching a polished surface. Clipped to the card's
-              rounded corners by the overflow-hidden above. */}
-          {hasShimmer && (
-            <div
-              className="absolute inset-y-0 w-1/3 animate-shimmerSweep pointer-events-none"
-              style={{ background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.6), transparent)' }}
-            ></div>
+      {/* Uncommon+ : a faint continuous float, like the card is resting just
+          slightly above the table. Amplitude/speed grow a touch with tier.
+          Paused (via hasFloat) whenever the card is actually being dragged
+          so it never fights with cursor tracking. */}
+      <motion.div
+        animate={hasFloat ? { y: [0, -2 - detailLevel * 0.6, 0] } : { y: 0 }}
+        transition={hasFloat
+          ? { duration: 2.4 + detailLevel * 0.3, repeat: Infinity, ease: 'easeInOut' }
+          : { duration: 0.2 }}
+      >
+        <div className="relative" style={{ transform: `rotate(${baseTilt}deg)`, transition: 'transform 0.2s ease' }}>
+          {/* Legendary glow -- a soft blurred halo breathing behind the card,
+              on its own layer (opacity/scale only) so it never fights the
+              card's own sticker shadow the way an animated box-shadow would. */}
+          {hasGlow && (
+            <motion.div
+              className="absolute -inset-2 rounded-2xl pointer-events-none bg-amber-300/40 blur-md"
+              animate={{ opacity: [0.3, 0.6, 0.3], scale: [0.96, 1.04, 0.96] }}
+              transition={{ duration: 2.6, repeat: Infinity, ease: 'easeInOut' }}
+            ></motion.div>
           )}
 
-          <div className="text-3xl pointer-events-none">{element.emoji}</div>
-          <div className="pointer-events-none">
-            <div className="font-hand font-semibold text-ink-700 text-base">{element.name}</div>
-            <div className={`text-xs capitalize font-medium ${rarityInfo.color}`}>{element.rarity}</div>
-          </div>
-
-          {/* Epic+ : small corner accents marking the higher tier. */}
-          {hasCornerAccents && (
+          {/* Legendary : a couple of tiny sparkles slowly orbiting the card,
+              traced by rotating a full-size layer with an offset dot inside
+              it -- cheap and smooth, no per-frame trig needed. */}
+          {hasOrbiters && (
             <>
-              <div className={`absolute top-1 left-1 w-1.5 h-1.5 rounded-full ${ACCENT_DOT_COLOR[element.rarity]} pointer-events-none`}></div>
-              <div className={`absolute top-1 right-1 w-1.5 h-1.5 rounded-full ${ACCENT_DOT_COLOR[element.rarity]} pointer-events-none`}></div>
+              <motion.div
+                className="absolute inset-0 pointer-events-none"
+                animate={{ rotate: 360 }}
+                transition={{ duration: 7, repeat: Infinity, ease: 'linear' }}
+              >
+                <div className="absolute -top-2 left-1/2 w-1 h-1 rounded-full bg-amber-300 shadow-[0_0_4px_1px_rgba(251,191,36,0.8)]"></div>
+              </motion.div>
+              <motion.div
+                className="absolute inset-0 pointer-events-none"
+                animate={{ rotate: -360 }}
+                transition={{ duration: 9, repeat: Infinity, ease: 'linear' }}
+              >
+                <div className="absolute -bottom-2 right-1/3 w-1 h-1 rounded-full bg-amber-200 shadow-[0_0_4px_1px_rgba(251,191,36,0.7)]"></div>
+              </motion.div>
             </>
           )}
 
-          {/* Merge indicator for dragged elements with merge targets */}
-          {isDragged && hasMergeTargets && (
-            <div className="absolute -top-2 -right-2 w-4 h-4 bg-amber-400 rounded-full animate-breathe"></div>
-          )}
+          <div
+            className={`relative overflow-hidden bg-gradient-to-br ${rarityInfo.bgColor} rounded-2xl border-[3px] px-4 py-3 flex items-center gap-3 transition-all duration-200 ${
+              (isDragged && hasMergeTargets) || isMergeTarget
+                ? 'scale-110 border-amber-400'
+                : ''
+            } ${isMergeTarget ? 'hover:scale-115' : ''}`}
+            style={{ boxShadow: cardShadow }}
+          >
+            {/* Rare+ : the shimmer sweep -- unchanged from before, still a
+                plain CSS keyframe animation. */}
+            {hasShimmer && (
+              <div
+                className="absolute inset-y-0 w-1/3 animate-shimmerSweep pointer-events-none"
+                style={{ background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.6), transparent)' }}
+              ></div>
+            )}
+
+            <div className="text-3xl pointer-events-none">{element.emoji}</div>
+            <div className="pointer-events-none">
+              <div className="font-hand font-semibold text-ink-700 text-base">{element.name}</div>
+              <div className={`text-xs capitalize font-medium ${rarityInfo.color}`}>{element.rarity}</div>
+            </div>
+
+            {/* Epic+ : twinkling corner accents, staggered so they don't
+                pulse in unison. */}
+            {hasCornerAccents && (
+              <>
+                <motion.div
+                  className="absolute top-1 left-1 w-1.5 h-1.5 rounded-full pointer-events-none"
+                  style={{ backgroundColor: accentColor }}
+                  animate={{ scale: [1, 1.5, 1], opacity: [0.55, 1, 0.55] }}
+                  transition={{ duration: 1.7, repeat: Infinity, ease: 'easeInOut' }}
+                ></motion.div>
+                <motion.div
+                  className="absolute top-1 right-1 w-1.5 h-1.5 rounded-full pointer-events-none"
+                  style={{ backgroundColor: accentColor }}
+                  animate={{ scale: [1, 1.5, 1], opacity: [0.55, 1, 0.55] }}
+                  transition={{ duration: 1.7, repeat: Infinity, ease: 'easeInOut', delay: 0.85 }}
+                ></motion.div>
+              </>
+            )}
+
+            {/* Merge indicator for dragged elements with merge targets */}
+            {isDragged && hasMergeTargets && (
+              <div className="absolute -top-2 -right-2 w-4 h-4 bg-amber-400 rounded-full animate-breathe"></div>
+            )}
+          </div>
         </div>
-      </div>
+      </motion.div>
 
       {/* Info button */}
       {onInfoClick && !isDragged && (

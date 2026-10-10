@@ -22,15 +22,7 @@ function App() {
     { instanceId: 'fire-1', elementId: 'fire', name: 'Fire', emoji: '🔥', x: 420, y: 150, rarity: 'common', isNew: false },
     { instanceId: 'water-1', elementId: 'water', name: 'Water', emoji: '💧', x: 570, y: 200, rarity: 'common', isNew: false },
     { instanceId: 'earth-1', elementId: 'earth', name: 'Earth', emoji: '🌍', x: 720, y: 180, rarity: 'common', isNew: false },
-    { instanceId: 'air-1', elementId: 'air', name: 'Air', emoji: '💨', x: 520, y: 300, rarity: 'common', isNew: false },
-    // TEMP design-review cards, not real elements -- their elementId doesn't
-    // exist in Supabase, so dragging one onto anything is a reliable way to
-    // trigger a rejection (great for previewing the reject animation) without
-    // needing a real live-Judge "no". Remove once rarity styling is settled.
-    { instanceId: 'test-uncommon-1', elementId: 'test-uncommon', name: 'Moss', emoji: '🌿', x: 420, y: 460, rarity: 'uncommon', isNew: false },
-    { instanceId: 'test-rare-1', elementId: 'test-rare', name: 'Comet', emoji: '☄️', x: 610, y: 460, rarity: 'rare', isNew: false },
-    { instanceId: 'test-epic-1', elementId: 'test-epic', name: 'Phoenix', emoji: '🔥', x: 800, y: 460, rarity: 'epic', isNew: false },
-    { instanceId: 'test-legendary-1', elementId: 'test-legendary', name: 'World Tree', emoji: '🌳', x: 990, y: 460, rarity: 'legendary', isNew: false }
+    { instanceId: 'air-1', elementId: 'air', name: 'Air', emoji: '💨', x: 520, y: 300, rarity: 'common', isNew: false }
   ]);
   const [allElements, setAllElements] = useState<any[]>([]);
   const [mergeTargets, setMergeTargets] = useState<Set<string>>(new Set());
