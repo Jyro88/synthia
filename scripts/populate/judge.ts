@@ -8,10 +8,11 @@ export const evaluateCombination = async (
   ingredients: ElementRow[],
   knownElements: ElementRow[],
   resultUsageCounts: Map<string, number>,
-  recipesByResultName: Map<string, string[]>
+  recipesByResultName: Map<string, string[]>,
+  themeHint?: string
 ): Promise<JudgeVerdict | null> => {
   const response = await callGemini(
-    buildPrompt(ingredients, knownElements, resultUsageCounts, recipesByResultName),
+    buildPrompt(ingredients, knownElements, resultUsageCounts, recipesByResultName, themeHint),
     JUDGE_RESPONSE_SCHEMA
   ) as RawJudgeResponse | null;
 
