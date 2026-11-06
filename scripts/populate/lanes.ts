@@ -17,7 +17,12 @@ const ROOT_IDS = ['fire', 'water', 'earth', 'air'];
 export const DEFAULT_LANES: Lane[] = [
   {
     name: 'life',
-    themeHint: 'biology, living things, growth, ecosystems, organisms'
+    themeHint: 'biology, living things, growth, ecosystems, organisms',
+    // 'life' and 'flora' were seeded by hand (Mud + Storm = Life, Life +
+    // Earth = Flora -- see shared/judge/core.ts's COMMON ASSOCIATIONS rule)
+    // specifically so this lane has a real biology anchor to deepen instead
+    // of only ever reaching back to the four physical roots.
+    anchorIds: [...ROOT_IDS, 'life', 'flora']
   },
   {
     name: 'culture',
